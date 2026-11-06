@@ -1,0 +1,15 @@
+services:
+    postgres:
+        image: postgres:17
+        container_name: cache-pg
+        environment:
+            POSTGRES_USER: app
+            POSTGRES_PASSWORD: app
+            POSTGRES_DB: cache_demo
+        ports:
+            - "5432:5432"
+    redis:
+        image: redis:8
+        container_name: redis_cache
+        ports:
+            -   "6379:6379"

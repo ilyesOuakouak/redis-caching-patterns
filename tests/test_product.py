@@ -1,6 +1,16 @@
 import pytest
 
-INT_MAX = 2_147_483_647
+from app.api.products import INT_MAX
+
+
+async def test_get_known_product_returns_200(client, product):
+    response = await client.get(f"/products/{product.id}")
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["id"] == product.id
+    assert body["name"] == product.name
+    assert body["price"] == "49.90"
 
 
 async def test_get_unknown_product_returns_404(client):
@@ -8,16 +18,6 @@ async def test_get_unknown_product_returns_404(client):
 
     assert response.status_code == 404
     assert response.json() == {"detail": "Product not found"}
-
-
-async def test_get_known_product_returns_200(client):
-    product_id = 1
-    response = await client.get(f"/products/{product_id}")
-
-    assert response.status_code == 200
-    body = response.json()
-    assert body["id"] == 1
-    assert body["name"] == "Claude AI"
 
 
 @pytest.mark.parametrize("product_id", [0, -1])

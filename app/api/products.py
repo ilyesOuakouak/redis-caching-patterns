@@ -3,7 +3,7 @@ from redis.asyncio import Redis
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_session
-from app.core.cache import get_redis, product_cache_key, CACHE_TTL_SECONDS
+from app.core.cache import get_redis, product_cache_key, CACHE_TTL_SECONDS, CACHE_NOT_FOUND, CACHE_NOT_FOUND_TTL_SECONDS
 from app.repositories.product import get_product_from_db, update_product_in_db
 from app.schemas.product import ProductRead, ProductUpdate
 
@@ -21,12 +21,16 @@ async def get_product(
     key = product_cache_key(product_id)
     cached = await redis.get(key)
 
+    if cached == CACHE_NOT_FOUND:
+        raise HTTPException(status_code=404, detail="Product not found")
+
     if cached is not None:
         return ProductRead.model_validate_json(cached)
 
     product = await get_product_from_db(session, product_id)
 
     if product is None:
+        await redis.set(key, CACHE_NOT_FOUND, ex=CACHE_NOT_FOUND_TTL_SECONDS)
         raise HTTPException(status_code=404, detail="Product not found")
 
     product_read = ProductRead.model_validate(product)

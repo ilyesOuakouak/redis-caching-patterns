@@ -49,6 +49,7 @@ async def test_put_existing_product_returns_200_with_new_values(client, product)
     assert put_response.status_code == 200
     put_body = put_response.json()
 
+    assert put_body["id"] == product.id
     assert put_body["name"] == product_data["name"]
     assert put_body["price"] == product_data["price"]
     assert put_body["description"] == product_data["description"]

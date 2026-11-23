@@ -39,7 +39,7 @@ async def get_product(
 
     return product_read
 
-@router.put("/{product_id}", response_model=ProductUpdate)
+@router.put("/{product_id}", response_model=ProductRead)
 async def put_product(
     data: ProductUpdate,
     product_id: int = Path(gt=0, le=INT_MAX),

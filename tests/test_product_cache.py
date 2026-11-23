@@ -1,9 +1,8 @@
 import asyncio
 import json
 
-from sqlalchemy.util import await_
 
-from app.core.cache import CACHE_TTL_SECONDS, product_cache_key
+from app.core.cache import CACHE_TTL_SECONDS, product_cache_key, CACHE_NOT_FOUND, CACHE_NOT_FOUND_TTL_SECONDS
 from app.repositories import product as product_repo
 
 
@@ -82,6 +81,36 @@ async def test_put_deletes_cache_key_and_next_get_returns_new_data(client, redis
     assert second_content["name"] == product_data["name"]
     assert second_content["price"] == product_data["price"]
     assert second_content["description"] == product_data["description"]
+
+async def test_unknown_product_is_a_miss_and_caches_not_found(client, redis):
+    unknown_product_id = 9999
+    response = await client.get(f"/products/{unknown_product_id}")
+
+    assert response.status_code == 404
+    assert product_repo.db_reads == 1
+
+
+    key = product_cache_key(unknown_product_id)
+
+    assert await redis.get(key) == CACHE_NOT_FOUND
+    ttl = await redis.ttl(key)
+    assert 0 < ttl <= CACHE_NOT_FOUND_TTL_SECONDS
+
+
+
+
+async def test_second_call_for_unknown_product_is_a_negative_hit(client):
+    unknown_product_id = 9999
+    response = await client.get(f"/products/{unknown_product_id}")
+
+    assert response.status_code == 404
+    assert product_repo.db_reads == 1
+
+    response_2 = await client.get(f"/products/{unknown_product_id}")
+    assert response_2.status_code == 404
+    assert product_repo.db_reads == 1
+    assert response_2.json() == {"detail": "Product not found"}
+
 
 
 

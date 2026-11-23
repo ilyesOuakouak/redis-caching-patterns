@@ -83,3 +83,20 @@ async def test_put_invalid_id_returns_422(client, product_id):
 
     assert response.status_code == 422
 
+@pytest.mark.parametrize(
+    "product_data",
+    [
+        pytest.param({"name": "ok", "price": "abc", "description": None}, id="price_not_a_number"),
+        pytest.param({"name": "ok", "description": None}, id="price_missing"),
+        pytest.param({"name": "a" * 101, "price": "10.00", "description": None}, id="name_too_long"),
+        pytest.param({"name": "", "price": "10.00", "description": None}, id="name_empty"),
+        pytest.param({"name": "ok", "price": "0", "description": None}, id="price_zero"),
+        pytest.param({"name": "ok", "price": "-5", "description": None}, id="price_negative"),
+        pytest.param({"name": "ok", "price": "123456789012.00", "description": None}, id="price_too_many_digits")
+
+    ],
+)
+async def test_put_invalid_body_returns_422(client, product, product_data):
+    response = await client.put(f"/products/{product.id}", json=product_data)
+
+    assert response.status_code == 422
